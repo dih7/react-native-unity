@@ -45,15 +45,15 @@ public class ReactNativeUnityView extends FrameLayout {
         }
         view.windowFocusChanged(hasWindowFocus);
 
-        if (!keepPlayerMounted || !ReactNativeUnity._isUnityReady) {
+        if (!keepPlayerMounted || !ReactNativeUnity.isUnityReady()) {
             return;
         }
 
         // pause Unity on blur, resume on focus
-        if (hasWindowFocus && ReactNativeUnity._isUnityPaused) {
+        if (hasWindowFocus && ReactNativeUnity.isUnityPaused()) {
             view.requestFocus();
-            view.resume();
-        } else if (!hasWindowFocus && !ReactNativeUnity._isUnityPaused) {
+            ReactNativeUnity.resume();
+        } else if (!hasWindowFocus && !ReactNativeUnity.isUnityPaused()) {
             view.pause();
         }
     }
