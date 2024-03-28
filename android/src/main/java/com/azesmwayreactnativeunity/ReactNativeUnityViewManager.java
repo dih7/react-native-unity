@@ -104,8 +104,7 @@ public class ReactNativeUnityViewManager extends ReactNativeUnityViewManagerSpec
         unloadUnity(view);
         return;
       case "pauseUnity":
-        assert args != null;
-        pauseUnity(view, args.getBoolean(0));
+        pauseUnity(view, true);
         return;
       case "resumeUnity":
         resumeUnity(view);
