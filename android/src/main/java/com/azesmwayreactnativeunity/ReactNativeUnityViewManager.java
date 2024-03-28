@@ -187,7 +187,7 @@ public class ReactNativeUnityViewManager extends ReactNativeUnityViewManagerSpec
   public void onHostDestroy() {
     if (isUnityReady()) {
       assert getPlayer() != null;
-      getPlayer().quit();
+//    getPlayer().quit();
     }
   }
 
