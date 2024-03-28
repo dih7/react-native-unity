@@ -2,6 +2,15 @@
 
 The plugin that allows you to embed a UNITY project into the react native as a full-fledged component
 
+### ATTENTION!
+
+The plugin now supports the new architecture as well.
+For iOS, it is no longer necessary to embed a project created with Unity. Only the built UnityFramework.framework is used. It should be placed in the plugin folder at the path -
+```<YOUR_PROJECT>/unity/builds/ios```.
+
+### IOS ONLY!!! If you used a previous version of the plugin - then be sure to delete everything that was related to Unity in the main react native project!
+
+
 # Installation
 
 ## RN
@@ -62,13 +71,13 @@ public class ButtonBehavior : MonoBehaviour
 
 ## iOS
 
-1. Build Unity app to `[project_root]/unity/builds/ios`
-2. Add `Unity-iPhone.xcodeproj` to your XCode: press the right mouse button in the Left Navigator XCode -> `Add Files to [project_name]...` -> `[project_root]/unity/builds/ios/Unity-iPhone.xcodeproj`
-3. Add `UnityFramework.framework` to `General` / section `Frameworks, Libraries, and Embedded Content`
-4. Select Data folder and set a checkbox in the "Target Membership" section to "UnityFramework"
-5. You need to select the NativeCallProxy.h inside the `Unity-iPhone/Libraries/Plugins/iOS` folder of the Unity-iPhone project and change UnityFramework’s target membership from Project to Public. Don’t forget this step! https://miro.medium.com/max/1400/1*6v9KfxzR6olQNioUp_dFQQ.png
-6. In `Build Phases` remove UnityFramework.framework from `Linked Binary With Libraries`
-7. In Build Phases move Embedded Frameworks before Compile Sources ( drag and drop )
+1. Build Unity project for ios in ANY folder - just not the main RN project folder!!!
+2. Open the created project in XCode
+3. Select Data folder and set a checkbox in the "Target Membership" section to "UnityFramework" ![image info](./docs/step1.jpg)
+4. You need to select the NativeCallProxy.h inside the `Unity-iPhone/Libraries/Plugins/iOS` folder of the Unity-iPhone project and change UnityFramework’s target membership from Project to Public. Don’t forget this step! ![image info](./docs/step2.jpg)
+5. If required - sign the project ```UnityFramework.framework``` and build a framework ![image info](./docs/step3.jpg)
+6. Open the folder with the built framework (by right-clicking) and move it to the plugin folder (```<YOUR_PROJECT>/unity/builds/ios```) ![image info](./docs/step4.jpg)
+7. Execute the command in the root of the main RN project ```rm -rf ios/Pods && rm -f ios/Podfile.lock && npx pod-install```
 
 ### Android
 
