@@ -6,36 +6,38 @@ import android.os.Build;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 
-
 import com.unity3d.player.UnityPlayer;
 import com.unity3d.player.UnityPlayerForActivityOrService;
 import com.unity3d.player.IUnityPlayerLifecycleEvents;
 
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 
-import java.lang.reflect.InvocationTargetException;
-
 public class ReactNativeUnity {
-    private static UPlayer unityPlayer;
-    public static boolean _isUnityReady;
-    public static boolean _isUnityPaused;
-    public static boolean _fullScreen;
+  private static UnityPlayer unityPlayer;
+  public static boolean _isUnityReady;
+  public static boolean _isUnityPaused;
+  public static boolean _fullScreen;
 
-    public static UPlayer getPlayer() {
-        if (!_isUnityReady) {
-            return null;
-        }
-        return unityPlayer;
+  public static UnityPlayer getPlayer() {
+    if (!_isUnityReady) {
+      return null;
     }
+    return unityPlayer;
+  }
 
-    public static boolean isUnityReady() {
-        return _isUnityReady;
+  public static boolean isUnityReady() {
+    return _isUnityReady;
+  }
+
+  public static boolean isUnityPaused() {
+    return _isUnityPaused;
+  }
+
+  public static void createPlayer(final Activity activity, final UnityPlayerCallback callback) {
+    if (unityPlayer != null) {
+      callback.onReady();
+      return;
     }
-
-    public static boolean isUnityPaused() {
-        return _isUnityPaused;
-    }
-
     if (activity != null) {
       activity.runOnUiThread(new Runnable() {
         @Override
@@ -79,68 +81,30 @@ public class ReactNativeUnity {
           _isUnityReady = true;
           callback.onReady();
         }
-
-        if (activity != null) {
-            activity.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    activity.getWindow().setFormat(PixelFormat.RGBA_8888);
-                    int flag = activity.getWindow().getAttributes().flags;
-                    boolean fullScreen = false;
-                    if ((flag & WindowManager.LayoutParams.FLAG_FULLSCREEN) == WindowManager.LayoutParams.FLAG_FULLSCREEN) {
-                        fullScreen = true;
-                    }
-
-                    try {
-                        unityPlayer = new UPlayer(activity, callback);
-                    } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | InvocationTargetException e) {}
-
-                    try {
-                        // wait a moment. fix unity cannot start when startup.
-                        Thread.sleep(1000);
-                    } catch (Exception e) {}
-
-                    // start unity
-                    try {
-                        addUnityViewToBackground();
-                    } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {}
-
-                    unityPlayer.windowFocusChanged(true);
-
-                    try {
-                        unityPlayer.requestFocusPlayer();
-                    } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {}
-
-                    unityPlayer.resume();
-
-                    if (!fullScreen) {
-                        activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
-                        activity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-                    }
-
-                    _isUnityReady = true;
-
-                    try {
-                        callback.onReady();
-                    } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {}
-                }
-            });
-        }
+      });
     }
+  }
 
-    public static void pause() {
-        if (unityPlayer != null) {
-            unityPlayer.pause();
-            _isUnityPaused = true;
-        }
+  public static void pause() {
+    if (unityPlayer != null) {
+      unityPlayer.pause();
+      _isUnityPaused = true;
     }
+  }
 
-    public static void resume() {
-        if (unityPlayer != null) {
-            unityPlayer.resume();
-            _isUnityPaused = false;
-        }
+  public static void resume() {
+    if (unityPlayer != null) {
+      unityPlayer.resume();
+      _isUnityPaused = false;
     }
+  }
+
+  public static void unload() {
+    if (unityPlayer != null) {
+      unityPlayer.unload();
+      _isUnityPaused = false;
+    }
+  }
 
   public static void addUnityViewToBackground() {
     if (unityPlayer == null) {
@@ -178,11 +142,11 @@ public class ReactNativeUnity {
     unityPlayer.resume();
   }
 
-    public interface UnityPlayerCallback {
-        void onReady() throws InvocationTargetException, NoSuchMethodException, IllegalAccessException;
+  public interface UnityPlayerCallback {
+    void onReady();
 
-        void onUnload();
+    void onUnload();
 
-        void onQuit();
-    }
+    void onQuit();
+  }
 }
