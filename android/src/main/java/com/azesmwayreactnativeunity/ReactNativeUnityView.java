@@ -4,22 +4,22 @@ import static com.azesmwayreactnativeunity.ReactNativeUnity.*;
 
 import android.content.Context;
 
+import com.unity3d.player.UnityPlayer;
+
 import android.annotation.SuppressLint;
 import android.content.res.Configuration;
 import android.widget.FrameLayout;
 
-import java.lang.reflect.InvocationTargetException;
-
 @SuppressLint("ViewConstructor")
 public class ReactNativeUnityView extends FrameLayout {
-  private UPlayer view;
+  private UnityPlayer view;
   public boolean keepPlayerMounted = false;
 
   public ReactNativeUnityView(Context context) {
     super(context);
   }
 
-  public void setUnityPlayer(UPlayer player) throws InvocationTargetException, NoSuchMethodException, IllegalAccessException {
+  public void setUnityPlayer(UnityPlayer player) {
     this.view = player;
     addUnityViewToGroup(this);
   }
@@ -27,11 +27,9 @@ public class ReactNativeUnityView extends FrameLayout {
   @Override
   public void onWindowFocusChanged(boolean hasWindowFocus) {
     super.onWindowFocusChanged(hasWindowFocus);
-
     if (view == null) {
       return;
     }
-
     view.windowFocusChanged(hasWindowFocus);
 
     if (!keepPlayerMounted || !_isUnityReady) {
@@ -50,7 +48,6 @@ public class ReactNativeUnityView extends FrameLayout {
   @Override
   protected void onConfigurationChanged(Configuration newConfig) {
     super.onConfigurationChanged(newConfig);
-
     if (view != null) {
       view.configurationChanged(newConfig);
     }
@@ -59,13 +56,8 @@ public class ReactNativeUnityView extends FrameLayout {
   @Override
   protected void onDetachedFromWindow() {
     if (!this.keepPlayerMounted) {
-        try {
-            addUnityViewToBackground();
-        } catch (InvocationTargetException | NoSuchMethodException | IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
+      addUnityViewToBackground();
     }
-
     super.onDetachedFromWindow();
   }
 }
