@@ -6,6 +6,11 @@ import android.os.Build;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 
+
+import com.unity3d.player.UnityPlayer;
+import com.unity3d.player.UnityPlayerForActivityOrService;
+import com.unity3d.player.IUnityPlayerLifecycleEvents;
+
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 
 import java.lang.reflect.InvocationTargetException;
@@ -31,11 +36,48 @@ public class ReactNativeUnity {
         return _isUnityPaused;
     }
 
-    public static void createPlayer(final Activity activity, final UnityPlayerCallback callback) throws InvocationTargetException, NoSuchMethodException, IllegalAccessException {
-        if (unityPlayer != null) {
-            callback.onReady();
+    if (activity != null) {
+      activity.runOnUiThread(new Runnable() {
+        @Override
+        public void run() {
+          activity.getWindow().setFormat(PixelFormat.RGBA_8888);
+          int flag = activity.getWindow().getAttributes().flags;
+          boolean fullScreen = false;
+          if ((flag & WindowManager.LayoutParams.FLAG_FULLSCREEN) == WindowManager.LayoutParams.FLAG_FULLSCREEN) {
+            fullScreen = true;
+          }
 
-            return;
+          unityPlayer = new UnityPlayerForActivityOrService(activity, new IUnityPlayerLifecycleEvents() {
+            @Override
+            public void onUnityPlayerUnloaded() {
+              callback.onUnload();
+            }
+
+            @Override
+            public void onUnityPlayerQuitted() {
+              callback.onQuit();
+            }
+          });
+
+          try {
+            // wait a moment. fix unity cannot start when startup.
+            Thread.sleep(1000);
+          } catch (Exception e) {
+          }
+
+          // start unity
+          addUnityViewToBackground();
+          unityPlayer.windowFocusChanged(true);
+          unityPlayer.getFrameLayout().requestFocus();
+          unityPlayer.resume();
+
+          // restore window layout
+          if (!fullScreen) {
+            activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
+            activity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+          }
+          _isUnityReady = true;
+          callback.onReady();
         }
 
         if (activity != null) {
@@ -100,53 +142,41 @@ public class ReactNativeUnity {
         }
     }
 
-    public static void unload() {
-        if (unityPlayer != null) {
-            unityPlayer.unload();
-            _isUnityPaused = false;
-        }
+  public static void addUnityViewToBackground() {
+    if (unityPlayer == null) {
+      return;
     }
-
-    public static void addUnityViewToBackground() throws InvocationTargetException, NoSuchMethodException, IllegalAccessException {
-        if (unityPlayer == null) {
-            return;
-        }
-
-        if (unityPlayer.getParentPlayer() != null) {
-            // NOTE: If we're being detached as part of the transition, make sure
-            // to explicitly finish the transition first, as it might still keep
-            // the view's parent around despite calling `removeView()` here. This
-            // prevents a crash on an `addContentView()` later on.
-            // Otherwise, if there's no transition, it's a no-op.
-            // See https://stackoverflow.com/a/58247331
-            ((ViewGroup) unityPlayer.getParentPlayer()).endViewTransition(unityPlayer.requestFrame());
-            ((ViewGroup) unityPlayer.getParentPlayer()).removeView(unityPlayer.requestFrame());
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            unityPlayer.setZ(-1f);
-        }
-
-        final Activity activity = ((Activity) unityPlayer.getContextPlayer());
-        ViewGroup.LayoutParams layoutParams = new ViewGroup.LayoutParams(1, 1);
-        activity.addContentView(unityPlayer.requestFrame(), layoutParams);
+    if (unityPlayer.getFrameLayout().getParent() != null) {
+      // NOTE: If we're being detached as part of the transition, make sure
+      // to explicitly finish the transition first, as it might still keep
+      // the view's parent around despite calling `removeView()` here. This
+      // prevents a crash on an `addContentView()` later on.
+      // Otherwise, if there's no transition, it's a no-op.
+      // See https://stackoverflow.com/a/58247331
+      ((ViewGroup) unityPlayer.getFrameLayout().getParent()).endViewTransition(unityPlayer.getFrameLayout());
+      ((ViewGroup) unityPlayer.getFrameLayout().getParent()).removeView(unityPlayer.getFrameLayout());
     }
-
-    public static void addUnityViewToGroup(ViewGroup group) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        if (unityPlayer == null) {
-            return;
-        }
-
-        if (unityPlayer.getParentPlayer() != null) {
-            ((ViewGroup) unityPlayer.getParentPlayer()).removeView(unityPlayer.requestFrame());
-        }
-
-        ViewGroup.LayoutParams layoutParams = new ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT);
-        group.addView(unityPlayer.requestFrame(), 0, layoutParams);
-        unityPlayer.windowFocusChanged(true);
-        unityPlayer.requestFocusPlayer();
-        unityPlayer.resume();
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+      unityPlayer.getFrameLayout().setZ(-1f);
     }
+    final Activity activity = ((Activity) unityPlayer.getContext());
+    ViewGroup.LayoutParams layoutParams = new ViewGroup.LayoutParams(1, 1);
+    activity.addContentView(unityPlayer.getFrameLayout(), layoutParams);
+  }
+
+  public static void addUnityViewToGroup(ViewGroup group) {
+    if (unityPlayer == null) {
+      return;
+    }
+    if (unityPlayer.getFrameLayout().getParent() != null) {
+      ((ViewGroup) unityPlayer.getFrameLayout().getParent()).removeView(unityPlayer.getFrameLayout());
+    }
+    ViewGroup.LayoutParams layoutParams = new ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT);
+    group.addView(unityPlayer.getFrameLayout(), 0, layoutParams);
+    unityPlayer.windowFocusChanged(true);
+    unityPlayer.getFrameLayout().requestFocus();
+    unityPlayer.resume();
+  }
 
     public interface UnityPlayerCallback {
         void onReady() throws InvocationTargetException, NoSuchMethodException, IllegalAccessException;
